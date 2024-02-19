@@ -25,7 +25,8 @@
 
 <h1 align="middle">CS 184/284A: Computer Graphics and Imaging, Spring 2024</h1>
 <h1 align="middle">Homework 1: Rasterizer</h1>
-<h2 align="middle">YOUR NAME</h2>
+<h2 align="middle">Yunshen Song</h2>
+<h2 align="middle">https://cal-cs184-student.github.io/hw-webpages-sp24-Hsong159/hw1/index.html</h2>
 
 <br><br>
 
@@ -47,38 +48,142 @@
     <tr>
       <td>
         <img src="images/image1.png" align="middle" width="400px"/>
-        <figcaption align="middle">Caption goes here.</figcaption>
+        <figcaption align="middle">Default Viewing</figcaption>
       </td>
       <td>
         <img src="images/image2.png" align="middle" width="400px"/>
-        <figcaption align="middle">Caption goes here.</figcaption>
+        <figcaption align="middle">Zoomed In</figcaption>
       </td>
     </tr>
  
   </table>
 </div>
-
+<p>The second image shows aliasing in action. </p>
 
 <h3 align="middle">Part 2: Antialiasing triangles</h3>
+<p> I started by looking at the function set_sample_rate and set_framebuffer_target, I saw that the resize of width * height is not enough and multiplied rate to it sample rate. Then I started to modify the rasterize_triangle function. To perform super sampling, I added two more for-loops to color each of the smaller pixel center for the large “divided pixel”. I also modified the fill_pixel function to fix point and lines like what I did inside the rasterize_triangle function. For the last step of the rasterization pipeline, I updated the resolve_to_framebuffer function so that it added all colored smaller squared and divided by the total number to get the average. During the process, I learned color can’t be manipulated using “\” but “*” does work. </p>
 
+<p>Super sampling is helpful because it can capture more detail and produce images with smoother edge. </p>
 
+<p> By using super sampling, we divided each pixel into smaller chunks and compared them with the triangle’s edge. Then the colors of the samples within each pixel are averaged, resulting in smoother edges and reduced aliasing.</p>
 
+<div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/image3.png" align="middle" width="400px"/>
+		  <figcaption align="middle">sample rate of 1</figcaption>
+		</td>
+		<td>
+		  <img src="images/image4.png" align="middle" width="400px"/>
+		  <figcaption align="middle">sample rate of 4</figcaption>
+		</td>
+	  </tr>
+	  <br>
+	  <tr>
+		<td>
+		  <img src="images/image5.png" align="middle" width="400px"/>
+		  <figcaption align="middle">sample rate of 16</figcaption>
+		</td>
+	  </tr>
+	</table>
+</div>
+<p>From the edge of the triangle, we can see the effect of super sampling clearly. This is because pixels at the edge of the triangle would see partial coverage, where part of the pixel falls into the triangle part does not, resulting in faded color. </p>
 <h3 align="middle">Part 3: Transforms</h3>
+<p>Below is an image I created showing the cubeman dancing as he swings his arms</p>
+
+<div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/image6.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Dancing Cubeman</figcaption>
+		</td>
+	  </tr>
+	</table>
+  </div>
 
 
 
 <h2 align="middle">Section II: Sampling</h2>
 
 <h3 align="middle">Part 4: Barycentric coordinates</h3>
-
+<p>barycentric coordinates is a method that expresses point in a triangle using is relevant position regarding the vertices of the triangle. The weighted combination of vertices in point in the image shown below produced colors by interpolating the vertex attributes based on these coordinates. Each vertex is assigned a color, and the color of any point within the triangle is determined by blending these colors according to the point's barycentric coordinates.</p>
+<div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/image7.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Color wheel</figcaption>
+		</td>
+	  </tr>
+	</table>
+  </div>
 
 <h3 align="middle">Part 5: "Pixel sampling" for texture mapping</h3>
+<p>Pixel sampling is the way to determine color values from a texture mapping of a 3d object. In nearest sampling, we scale our coordinate u,v to a texture coordinate and select the closest texture element to that scaled coordinate. In bilinear sampling, we again we scale our coordinate u,v to a texture coordinate but we calculate the texture element by blending the nearest four element using linear interpolation. </p>
 
 
-<h3 align="middle">Part 6: "Level sampling" with mipmaps for texture mapping</h3>
+<div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/image8.png" align="middle" width="400px"/>
+		  <figcaption align="middle">nearest pixel with supersamling rate of 1</figcaption>
+		</td>
+		<td>
+		  <img src="images/image9.png" align="middle" width="400px"/>
+		  <figcaption align="middle">nearest pixel with supersamling rate of 16</figcaption>
+		</td>
+	  </tr>
+	  <br>
+	  <tr>
+		<td>
+		  <img src="images/image10.png" align="middle" width="400px"/>
+		  <figcaption align="middle">bilinear pixel with supersamling rate of 1</figcaption>
+		</td>
+		<td>
+		  <img src="images/image11.png" align="middle" width="400px"/>
+		  <figcaption align="middle">bilinear pixel with supersamling rate of 16</figcaption>
+		</td>
+	  </tr>
+	</table>
+  </div>
 
+  <p> From the images above, by comparing the nearest and the bilinear at super sampling at 1 pixel, we can see that bilinear produced an image that is a lot smoother. In fact, it bilinear at super sampling of 1 pixel performed at a relative level of nearest at super sampling of 16 pixel. </p>
+  <p>Large difference between nearest sampling and bilinear sampling would occur when texture must be magnified. This means that each texture element is much smaller than 1 pixel. So nearest sampling would produce an image that look blocky, whereas bilinear is much smoother.</p>
 
+  <h3 align="middle">Part 6: "Level sampling" with mipmaps for texture mapping</h3>
+  <p>Level sampling involves find the level by calculating logs of norm as mentioned in lecture. For lsm == L_linear I performed linear interpolation by using the floor(get_level()), ceil(get_level()), and diff = get_level() - floor(get_level()). I also found (du/dx, dv/dx) and (du/dy, dv/dy) as mentioned in the spec.</p>
 
+  <p>Out of all three-sampling method, super sampling has the most memory usage and takes the most computational power. Super sampling has similar effects as pixel sampling, both of which helps to create smoother edges in high contrast areas. One advantage of pixel sampling is that it often doesn’t require a lot of memory. Level sampling focus on improving the textures quality and makes the images looks blended. </p>
+
+  <div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/image12.png" align="middle" width="400px"/>
+		  <figcaption align="middle">level zero with nearest sampling</figcaption>
+		</td>
+		<td>
+		  <img src="images/image13.png" align="middle" width="400px"/>
+		  <figcaption align="middle">level zero with bilinear sampling</figcaption>
+		</td>
+	  </tr>
+	  <br>
+	  <tr>
+		<td>
+		  <img src="images/image14.png" align="middle" width="400px"/>
+		  <figcaption align="middle">nearest level zero with nearest sampling</figcaption>
+		</td>
+		<td>
+		  <img src="images/image15.png" align="middle" width="400px"/>
+		  <figcaption align="middle">nearest level zero with bilinear sampling</figcaption>
+		</td>
+	  </tr>
+	</table>
+  </div>
+  
 <h2 align="middle">Section III: Art Competition</h2>
 <p>If you are not participating in the optional art competition, don't worry about this section!</p>
 
