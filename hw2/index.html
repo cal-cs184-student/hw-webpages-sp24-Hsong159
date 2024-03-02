@@ -1,7 +1,251 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Homework 2 index.html here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>CS 184/284A Rasterizer</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+<h1 align="middle">CS 184/284A: Computer Graphics and Imaging, Spring 2024</h1>
+<h1 align="middle">Homework 2: Meshedit</h1>
+<h2 align="middle">Yunshen Song</h2>
+<h2 align="middle">https://cal-cs184-student.github.io/hw-webpages-sp24-Hsong159/hw2/index.html</h2>
+
+<br><br>
+
+<div>
+
+<h2 align="middle">Overview</h2>
+<p>In the homework, I have build Bezier curves and surfaces using de Casteljau algorithm, manipulate triangle meshes represented by half-edge data structure, and implement loop subdivision</p>
+
+<h2 align="middle">Section I: Bezier Curves and Surfaces</h2>
+
+<h3 align="middle">Part 1: Bezier Curves with 1D de Casteljau Subdivision </h3>
+<p> The de Casteljau's algorithm is used to evaluate and visualize Bézier curves. Given a set of points, the algorithm linearly interpolates between consecutive points, creating new sets of points. I implement the algorithm by performing one step of the algorithm through looping through each point and calculating a new set of point according to the formula. </p>
+
+
+<p>Below are images of my Bézier curves</p>
+
+<div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/image1.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Bézier curves on 6 points after 1 step</figcaption>
+		</td>
+		<td>
+		  <img src="images/image2.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Bézier curves on 6 points after 2 step<</figcaption>
+		</td>
+	  </tr>
+	  <br>
+	  <tr>
+		<td>
+		  <img src="images/image3.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Bézier curves on 6 points after 3 step<</figcaption>
+		</td>
+		<td>
+		  <img src="images/image4.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Bézier curves on 6 points after 4 step<</figcaption>
+		</td>
+	  </tr>
+	  <br>
+	  <tr>
+		<td>
+		  <img src="images/image5.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Bézier curves on 6 points after 5 step<</figcaption>
+		</td>
+		<td>
+		  <img src="images/image6.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Bézier curves on 6 points after 5 step and drew the curve<</figcaption>
+		</td>
+	  </tr>
+	  <td>
+		<img src="images/image7.png" align="middle" width="400px"/>
+		<figcaption align="middle">Slightly different Bézier curves with updated points and different t<</figcaption>
+	  </td>
+
+	  
+	</table>
+  </div>
+
+<h3 align="middle">Bezier Surfaces with Separable 1D de Casteljau</h3>
+<p> I implemented thevector3D evaluationStep function very similar to the vector2D evaluationStep function, the only difference is that I replaced the vector2D with vector 3D. I implemented the evaluate1D function such that it recursively calls evaluationStep until there is only one point left. Then in the evaluate function, I first evaluate each row use evaluate1D and record the resulting point. Then I evaluate the recorded result using evaluated1D to get the final point. </p>
+
+<div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/image8.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Teapot created using Bezier Surfaces with Separable 1D de Casteljau</figcaption>
+		</td>
+	  </tr>
+	</table>
+  </div>
+
+<h2 align="middle">Section II: Triangle Meshes and Half-Edge Data Structure</h2>
+
+
+<h3 align="middle">Part 3: Area-Weighted Vertex Normals</h3>
+<p>I started the while loop by looping the current halfedge. Then I got the two edges by subtracting the vertices of the face. Finally, I performed cross product to get the normal of the face. I also updated the current halfedge similar to the function printNeighborPositions(). After the while loop have ended, I normalize the sum of all area-weighted normal.</p>
+
+<div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/image9.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Teapot without Area-Weighted Vertex Normals< </figcaption>
+		</td>
+		<td>
+		  <img src="images/image10.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Teapot with Area-Weighted Vertex Normals</figcaption>
+		</td>
+	  </tr>
+	</table>
+  </div>
+
+
+<h3 align="middle">Part 4: Edge Flip</h3>
+<p>I implemented edge flip by first drawing out the pair of triangles as shown in the spec. Then I labeled every half-edges, vertices, edges, and faces and observed how they were changed after the flip. In my first implementation, it didn’t work out and I didn’t understand why. I then reassigned them to new variables and got it working. I think maybe one vertex or variable is messing everything up.</p>
+<div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/image11.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Teapot before edge flip< </figcaption>
+		</td>
+		<td>
+		  <img src="images/image12.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Teapot after edge flip</figcaption>
+		</td>
+	  </tr>
+	</table>
+  </div>
+
+<h3 align="middle">Part 5: Edge Split </h3>
+<p>I implemented edge slip similar to how I did edge flip. I drew out the split shape and labeled everything just like what I did in edge flip. I got it in one try this time, so I didn’t need to debug. </p>
+
+<p>It was in a later part that I realized that part of it was wrong and I had to fix it. I had to rerun the logic on the notebook.</p>
+
+<div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/image11.png" align="middle" width="400px"/>
+		  <figcaption align="middle">before edge split</figcaption>
+		</td>
+		<td>
+		  <img src="images/image13.png" align="middle" width="400px"/>
+		  <figcaption align="middle">after edge split</figcaption>
+		</td>
+	  </tr>
+	  <br>
+	  <tr>
+		<td>
+		  <img src="images/image11.png" align="middle" width="400px"/>
+		  <figcaption align="middle">before edge split and edge flip</figcaption>
+		</td>
+		<td>
+		  <img src="images/image14.png" align="middle" width="400px"/>
+		  <figcaption align="middle">after edge split and edge flip</figcaption>
+		</td>
+	  </tr>
+	</table>
+  </div>
+
+
+  <h3 align="middle">Part 6: Loop Subdivision for Mesh Upsampling </h3>
+  <p>I implemented loop subdivision by following the comments in the function. When computing new position, I looped through its neighbor and updated the position of the original vertex based on the sum of it’s neighbor and the degree of the vertex. When updating the vertex position, I used the formula in the spec.  When splitting edges, I first added all the current edge into a vector and iterated the vector so newly create edge aren’t getting iterated over. Flipping edges connecting old and new vertex, I did the smart thing of asking v1.new != v2.new which accounted for both of the cases. In debugging , I ended up updating my splitEdge() function to get everything in the correct behavior. </p>
+
+  <p>I noticed that as we perform loop subdivision, mesh’s sharp corner and edge started to disappear.  </p>
+
+  <div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/image15.png" align="middle" width="400px"/>
+		  <figcaption align="middle">icosahedron with no loop subdivision </figcaption>
+		</td>
+		<td>
+		  <img src="images/image16.png" align="middle" width="400px"/>
+		  <figcaption align="middle">icosahedron with 4 level of loop subdivision </figcaption>
+		</td>
+	  </tr>
+	</table>
+  </div>
+
+  <p>As we take a look at the icosahedron down below, as we form more edge split close to the vertex, we are more likely to preserve the sharp vertex and edges. </p>
+
+  <div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/image17.png" align="middle" width="400px"/>
+		  <figcaption align="middle">icosahedron with edge split close to vertices </figcaption>
+		</td>
+		<td>
+		  <img src="images/image18.png" align="middle" width="400px"/>
+		  <figcaption align="middle">icosahedron with with edge split close to vertices adter 4 level of loop subdivision </figcaption>
+		</td>
+	  </tr>
+	</table>
+  </div>
+
+  <p>Before we split the diagonal of the cube, we notice that the cube become asymmetric after several of loop subdivision.</p>
+
+  <div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/image19.png" align="middle" width="400px"/>
+		  <figcaption align="middle">cube with no loop subdivision showing diagonal edges</figcaption>
+		</td>
+		<td>
+		  <img src="images/image20.png" align="middle" width="400px"/>
+		  <figcaption align="middle">cube with 3 loop subdivision of diagonal edges</figcaption>
+		</td>
+	  </tr>
+	</table>
+  </div>
+
+  <p>After splitting each of the diagonal, we see that the resulted shape become symmetric. </p>
+
+  <div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/image21.png" align="middle" width="400px"/>
+		  <figcaption align="middle">cube with no loop subdivision showing splited diagonal edges<</figcaption>
+		</td>
+		<td>
+		  <img src="images/image22.png" align="middle" width="400px"/>
+		  <figcaption align="middle">cube with 3 loop subdivision of splited diagonal edges</figcaption>
+		</td>
+	  </tr>
+	</table>
+  </div>
+  
+<h2 align="middle">Section III: Art Competition</h2>
+<p>If you are not participating in the optional art competition, don't worry about this section!</p>
+
+<h3 align="middle">Part 7: Draw something interesting!</h3>
+
+</body>
 </html>
