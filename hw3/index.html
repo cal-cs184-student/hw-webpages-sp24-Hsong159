@@ -1,7 +1,408 @@
-<html>
-	<head>
-	</head>
-	<body>
-		Homework 3 index.html here
-	</body>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
+<head>
+<style>
+  body {
+    padding: 100px;
+    width: 1000px;
+    margin: auto;
+    text-align: left;
+    font-weight: 300;
+    font-family: 'Open Sans', sans-serif;
+    color: #121212;
+  }
+  h1, h2, h3, h4 {
+    font-family: 'Source Sans Pro', sans-serif;
+  }
+</style>
+<title>CS 184/284A Rasterizer</title>
+<meta http-equiv="content-type" content="text/html; charset=utf-8" />
+<link href="https://fonts.googleapis.com/css?family=Open+Sans|Source+Sans+Pro" rel="stylesheet">
+</head>
+
+
+<body>
+
+<h1 align="middle">CS 184/284A: Computer Graphics and Imaging, Spring 2024</h1>
+<h1 align="middle">Homework 3-1: Pathtracer</h1>
+<h2 align="middle">Yunshen Song</h2>
+<h2 align="middle">https://cal-cs184-student.github.io/hw-webpages-sp24-Hsong159/hw3/index.html</h2>
+
+<br><br>
+
+<div>
+
+<h2 align="middle">Overview</h2>
+<p>In the homework, I implemented Ray Generation and Scene Intersection, Bounding Volume Hierarchy, Direct Illumination, Global Illumination, and Adaptive Sampling
+</p>
+
+
+<h3 align="middle">Part 1: Ray Generation and Scene Intersection:</h3>
+<p>In task1: Generating Camera Rays I transformed coordinates from image space into the camera space by scaling them with the height and width in the camera space.  Then I updated the min_t and max_t of the ray with near and far clipping planes.  </p>
+
+<p>In task2:Generating Pixel Samples, I performed n loops of generating random samples with get_sample and averaged the color and updated the pixel. </p>
+
+<p>In task3: Ray Triangle Intersection, I implemented the Muller Trumbore algorithm. I computed two edge vectors from the 3 vertices of the triangle which I used to find the determinant with dot and cross product. Then I computed the Barycentric coordinate by using the calculated determinant, vectors, distance from p1 to origin, and dot and cross product. Then I updated the intersection as describe in the spec. </p>
+
+<p>In task4: Ray sphere intersection, I followed the slide and calculated a,b,c which are used to calculate the intersection points t1 and t2 from the ray to the sphere. I updated max_t in has_intercection() by using a helper function and in intersect(), I updated intersection’s t, n, primitive, and bsdf as described in the spec. </p>
+
+<p>Below are a few images of normal shading after I implemented </p>
+
+<div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/blob.png" align="middle" width="400px"/>
+		  <figcaption align="middle">result after running blob.dae after Ray Generation and Scene Intersection </figcaption>
+		</td>
+		<td>
+		  <img src="images/CBcoil.png" align="middle" width="400px"/>
+		  <figcaption align="middle">result after running CBcoil.dae after Ray Generation and Scene Intersection </figcaption>
+		</td>
+	  </tr>
+	  <td>
+		<img src="images/banana.png" align="middle" width="400px"/>
+		<figcaption align="middle">result after running banana.dae after Ray Generation and Scene Intersection </figcaption>
+	  </td>
+
+	  
+	</table>
+  </div>
+
+<h3 align="middle">Part 2: Bounding Volume Hierarchy:</h3>
+
+<p> To construct BVH, I started with a new BVHNode and an if statement that checks the number of primitives in the current subset is less than or equal to max_leaf_size.  Then I used centroid bounding box to determine the axis along which to split. I chose median primitives as the heuristic because it is simple and fast and doesn’t require extensive computation. However, it may not always produce the most efficient tree in terms of minimizing ray-primitive intersection tests during rendering. To partition around the median, I used the nth_element function with a comparing function that compares the centroid of the primitives in linear runtime. Then Two new subsets are created: one from start to the partition point, and the other from the partition point to end, and we call construct_bvh on each of them.  </p>
+
+<p>Then when implementing intersection in Bounding Box, I utilized optimization in Ray-plane intersection as shown in the lecture slide. Then from each of the three dimensions, I calculated the maximum of min.x(or .y and .z)of the three and the minimum of the max.x(or .y and .z). Finally, I compared them to r.min_t and r.max_t. </p>
+
+<p>In BVH intersection, I checked if the ray intercepts the bounding box. Then if the node is a leaf we loop through each primitives and check for intercepts. Else, we call interception on it’s left and right nodes. The function has intersection and intersect is the same other than intersect need to report the nearest intersection using Intersection I structure.  </p>
+
+<div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/cow.png" align="middle" width="400px"/>
+		  <figcaption align="middle">result after running cow.dae with BVH acceleration </figcaption>
+		</td>
+		<td>
+		  <img src="images/CBlucy.png" align="middle" width="400px"/>
+		  <figcaption align="middle">result after running CBlucy.dae with BVH acceleration </figcaption>
+		</td>
+	  </tr>
+	  <td>
+		<img src="images/CBbunny.png" align="middle" width="400px"/>
+		<figcaption align="middle">result after running CBbunny.dae after with BVH acceleration </figcaption>
+	  </td>
+
+	  
+	</table>
+  </div>
+
+  <p>In the following images, we will take a look at how much BVH speed up rendering</p>
+
+  <div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/render_1.png" align="middle" width="400px"/>
+		  <figcaption align="middle">CBbunny.png without BVH, takes around 341 seconds</figcaption>
+		</td>
+		<td>
+		  <img src="images/render_2.png" align="middle" width="400px"/>
+		  <figcaption align="middle">cow.png without BVH, takes around 26 seconds</figcaption>
+		</td>
+	  </tr>
+	  <br>
+	  <tr>
+		<td>
+		  <img src="images/render_3.png" align="middle" width="400px"/>
+		  <figcaption align="middle">CBbunny.png with BVH, takes around 0.11 seconds</figcaption>
+		</td>
+		<td>
+		  <img src="images/render_4.png" align="middle" width="400px"/>
+		  <figcaption align="middle">CBbunny.png with BVH, takes around 0.04 seconds</figcaption>
+		</td>
+	  </tr>
+	</table>
+  </div>
+
+
+
+
+
+<h3 align="middle">Part 3:  Direct Illumination</h3>
+<p>In estimate_direct_lighting_hemisphere, it estimates direct lighting at a point by sampling directions uniformly over a hemisphere centered at that point. I started by looping num_samples time, and each time I would get a sample from hemisphereSampler. Then I constructed a new ray from hit_p, ESP_F, o2w, and my sample. For rays that do intersect with a surface, I checked if the intersected surface is a light source. If so, calculate the contribution of this light to the hit point using the reflection equation. Lastly, I Divide the accumulated light by the total number of samples. </p>
+
+<p>In estimate_direct_lighting_importance, it directly samples light sources instead of the hemisphere. I started with a for loop that loops through each of the light sources. Then for i in ns_area_light, I would use the sample_L method to generate a direction from the hit point towards the light, the distance to the light, and the PDF for this sampling. I then created a new ray and setup ray.min_t and ray.max_t. If the ray is not blocked by any intersection, I would add it to L_out_new using the reflection equation. Lastly, I add average L_out_new after each of the inner for loop.</p>
+
+
+<div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/CBbunny_H_16_8.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Hemisphere lighting with 16 sample per pixel and 8 light sample</figcaption>
+		</td>
+		<td>
+		  <img src="images/CBbunny_H_64_32.png" align="middle" width="400px"/>
+		  <figcaption align="middle">Hemisphere lighting with 64 sample per pixel and 32 light sample</figcaption>
+		</td>
+	  </tr>
+	</table>
+  </div>
+
+
+
+  <div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/bunny_1_1.png" align="middle" width="400px"/>
+		  <figcaption align="middle">light sampling with 1 light ray and 1 sample per pixel</figcaption>
+		</td>
+		<td>
+		  <img src="images/bunny_1_4.png" align="middle" width="400px"/>
+		  <figcaption align="middle">light sampling with 1 light ray and 4 sample per pixel</figcaption>
+		</td>
+	  </tr>
+	  <br>
+	  <tr>
+		<td>
+		  <img src="images/bunny_1_16.png" align="middle" width="400px"/>
+		  <figcaption align="middle">light sampling with 1 light ray and 16 sample per pixel</figcaption>
+		</td>
+		<td>
+		  <img src="images/bunny_1_64.png"" align="middle" width="400px"/>
+		  <figcaption align="middle">light sampling with 1 light ray and 64 sample per pixel</figcaption>
+		</td>
+	  </tr>
+	</table>
+  </div>
+
+  <p>Uniform hemisphere sampling, which randomly selects directions over a hemisphere at the intersection point, is more prone to noise and slower convergence. In scenes with few or small light sources, it is prone to noise because many samples may not contribute to the illumination at the point. In contrast, importance sampling directly targets light sources, leading to more efficient sampling, reduced noise, and faster convergence. Therefore, while uniform hemisphere sampling is simpler and can be effective for scenes with spread out light sources, importance sampling offers a more targeted approach, yielding cleaner images for scenes that have condensed light sources.</p>
+
+
+<h3 align="middle">Part 4: Global Illumination</h3>
+<p>In my at_least_one_bounce_radience function, my initial case is that  if max_depth is zero, it would return the zero_bounce_radience. Then I added the one bounce radiance of the current r and drew a sample. I also updated the min_t and depth. If max_depth is reached or Russian Roulette coin flip is true, then we immediately return L_out. Else, we test for intercept and update L_out according to isAccumBounces and current depth. If no intercept, I returned the zero vector. </p>
+
+<div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/CBbunny_global.png" align="middle" width="400px"/>
+		  <figcaption align="middle">global illumination of CBbunny.dae with 1024 sample per pixel</figcaption>
+		</td>
+		<td>
+		  <img src="images/spheres_global.png"" align="middle" width="400px"/>
+		  <figcaption align="middle">global illumination of CBspheres_lambertian.dae with 1024 sample per pixel</figcaption>
+		</td>
+	  </tr>
+	</table>
+  </div>
+
+  <div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/spheres_sample_direct.png" align="middle" width="400px"/>
+		  <figcaption align="middle">only direct illumination of CBspheres_lambertian.dae </figcaption>
+		</td>
+		<td>
+		  <img src="images/spheres_sample_indirect.png"" align="middle" width="400px"/>
+		  <figcaption align="middle">only indirect illumination of CBspheres_lambertian.dae </figcaption>
+		</td>
+	  </tr>
+	</table>
+  </div>
+
+  <div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/CBbunny_off_0.png" align="middle" width="400px"/>
+		  <figcaption align="middle">running CBbunny.bae with isAccumBounces=false and max_ray_depth set to 0</figcaption>
+		</td>
+		<td>
+		  <img src="images/CBbunny_off_1.png" align="middle" width="400px"/>
+		  <figcaption align="middle">running CBbunny.bae with isAccumBounces=false and max_ray_depth set to 1</figcaption>
+		</td>
+	  </tr>
+	  <br>
+	  <tr>
+		<td>
+		  <img src="images/CBbunny_off_2.png"" align="middle" width="400px"/>
+		  <figcaption align="middle">running CBbunny.bae with isAccumBounces=false and max_ray_depth set to 2</figcaption>
+		</td>
+		<td>
+		  <img src="images/CBbunny_off_3.png"" align="middle" width="400px"/>
+		  <figcaption align="middle">running CBbunny.bae with isAccumBounces=false and max_ray_depth set to 3</figcaption>
+		</td>
+	  </tr>
+	  <br>
+	  <tr>
+		<td>
+		  <img src="images/CBbunny_off_4.png"" align="middle" width="400px"/>
+		  <figcaption align="middle">running CBbunny.bae with isAccumBounces=false and max_ray_depth set to 4</figcaption>
+		</td>
+		<td>
+		  <img src="images/CBbunny_off_5.png"" align="middle" width="400px"/>
+		  <figcaption align="middle">running CBbunny.bae with isAccumBounces=false and max_ray_depth set to 5</figcaption>
+		</td>
+	  </tr>
+	</table>
+  </div>
+
+  <p>We see in the 2nd and 3rd bounce of light, the contrast between the rabbit and the background is shown clearly because of shadows produced during bounce of light. Here, it is better than rasterization because  rasterization is less physically accurate compared to ray tracing, especially for effects like reflections, refractions, and complex shadows</p>
+
+  <div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/CBbunny_on_0.png" align="middle" width="400px"/>
+		  <figcaption align="middle">running CBbunny.bae with isAccumBounces=true and max_ray_depth set to 0</figcaption>
+		</td>
+		<td>
+		  <img src="images/CBbunny_on_1.png" align="middle" width="400px"/>
+		  <figcaption align="middle">running CBbunny.bae with isAccumBounces=true and max_ray_depth set to 1</figcaption>
+		</td>
+	  </tr>
+	  <br>
+	  <tr>
+		<td>
+		  <img src="images/CBbunny_on_2.png"" align="middle" width="400px"/>
+		  <figcaption align="middle">running CBbunny.bae with isAccumBounces=true  and max_ray_depth set to 2</figcaption>
+		</td>
+		<td>
+		  <img src="images/CBbunny_on_3.png"" align="middle" width="400px"/>
+		  <figcaption align="middle">running CBbunny.bae with isAccumBounces=true  and max_ray_depth set to 3</figcaption>
+		</td>
+	  </tr>
+	  <br>
+	  <tr>
+		<td>
+		  <img src="images/CBbunny_on_4.png"" align="middle" width="400px"/>
+		  <figcaption align="middle">running CBbunny.bae with isAccumBounces=true and max_ray_depth set to 4</figcaption>
+		</td>
+		<td>
+		  <img src="images/CBbunny_on_5.png"" align="middle" width="400px"/>
+		  <figcaption align="middle">running CBbunny.bae with isAccumBounces=true  and max_ray_depth set to 5</figcaption>
+		</td>
+	  </tr>
+	</table>
+  </div>
+
+  <div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/CBbunny_RR_0.png" align="middle" width="400px"/>
+		  <figcaption align="middle">running CBbunny.bae with Russian Roulette, isAccumBounces=true, and max_ray_depth set to 0</figcaption>
+		</td>
+		<td>
+		  <img src="images/CBbunny_RR_1.png" align="middle" width="400px"/>
+		  <figcaption align="middle">running CBbunny.bae with Russian Roulette, isAccumBounces=true, and max_ray_depth set to 1</figcaption>
+		</td>
+	  </tr>
+	  <br>
+	  <tr>
+		<td>
+		  <img src="images/CBbunny_RR_2.png"" align="middle" width="400px"/>
+		  <figcaption align="middle">running CBbunny.bae with Russian Roulette, isAccumBounces=true, and max_ray_depth set to 2</figcaption>
+		</td>
+		<td>
+		  <img src="images/CBbunny_RR_3.png"" align="middle" width="400px"/>
+		  <figcaption align="middle">running CBbunny.bae with Russian Roulette, isAccumBounces=true, and max_ray_depth set to 3</figcaption>
+		</td>
+	  </tr>
+	  <br>
+	  <tr>
+		<td>
+		  <img src="images/CBbunny_RR_4.png"" align="middle" width="400px"/>
+		  <figcaption align="middle">running CBbunny.bae with Russian Roulette, isAccumBounces=true, and max_ray_depth set to 4</figcaption>
+		</td>
+		<td>
+		  <img src="images/CBbunny_RR_100.png"" align="middle" width="400px"/>
+		  <figcaption align="middle">running CBbunny.bae with Russian Roulette, isAccumBounces=true, and max_ray_depth set to 100</figcaption>
+		</td>
+	  </tr>
+	</table>
+  </div>
+
+  <div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/spheres_sample_1.png" align="middle" width="400px"/>
+		  <figcaption align="middle">running CBspheres_lambertian.dae with 1 sample per pixel and 4 light rays</figcaption>
+		</td>
+		<td>
+		  <img src="images/spheres_sample_2.png" align="middle" width="400px"/>
+		  <figcaption align="middle">running CBspheres_lambertian.dae with 2 sample per pixel and 4 light rays</figcaption>
+		</td>
+	  </tr>
+	  <br>
+	  <tr>
+		<td>
+		  <img src="images/spheres_sample_4.png" align="middle" width="400px"/>
+		  <figcaption align="middle">running CBspheres_lambertian.dae with 4 sample per pixel and 4 light rays</figcaption>
+		</td>
+		<td>
+		  <img src="images/spheres_sample_8.png"" align="middle" width="400px"/>
+		  <figcaption align="middle">running CBspheres_lambertian.dae with 8 sample per pixel and 4 light rays</figcaption>
+		</td>
+	  </tr>
+	  <br>
+	  <tr>
+		<td>
+		  <img src="images/spheres_sample_16.png"" align="middle" width="400px"/>
+		  <figcaption align="middle">running CBspheres_lambertian.dae with 16 sample per pixel and 4 light rays</figcaption>
+		</td>
+	  <tr>
+		<td>
+		  <img src="images/spheres_sample_64.png"" align="middle" width="400px"/>
+		  <figcaption align="middle">running CBspheres_lambertian.dae with 64 sample per pixel and 4 light rays</figcaption>
+		</td>
+		<td>
+		  <img src="images/spheres_sample_1024.png"" align="middle" width="400px"/>
+		  <figcaption align="middle">running CBspheres_lambertian.dae with 1024 sample per pixel and 4 light rays</figcaption>
+		</td>
+	  </tr>
+	</table>
+  </div>
+
+
+<h3 align="middle">Part 5: Adaptive Sampling </h3>
+<p>In my adaptive sampling, I kept a size and batch constant. Every time we sample, we get a random sample and create a new ray with the given input. I then performed at_least_one_bounce_radience in the new ray and updated sum_1 and sum_2 with the illum(). If my batch every reach sampleperBatch, I calculate I and determine whether I smaller than maxTolrance*sum_1/size. If yes, I break from loop and update sampleCountBuffer and pixel accordingly. </p>
+
+
+<div align="middle">
+	<table style="width=100%">
+	  <tr>
+		<td>
+		  <img src="images/bunny.png" align="middle" width="400px"/>
+		  <figcaption align="middle">bunny image</figcaption>
+		</td>
+		<td>
+		  <img src="images/bunny_rate.png" align="middle" width="400px"/>
+		  <figcaption align="middle">bunny sampling rate image</figcaption>
+		</td>
+	  </tr>
+	  <br>
+	  <tr>
+		<td>
+		  <img src="images/sphere_adapt_rate.png" align="middle" width="400px"/>
+		  <figcaption align="middle">sphere</figcaption>
+		</td>
+		<td>
+		  <img src="images/sphere_adapt_rate.png" align="middle" width="400px"/>
+		  <figcaption align="middle">sphere sampling rate image</figcaption>
+		</td>
+	  </tr>
+	</table>
+  </div>
+
+
+  
+
+</body>
 </html>
